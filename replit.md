@@ -77,3 +77,30 @@ The `server/replit_integrations/` folder contains pre-built utilities for:
 - Batch processing with rate limiting
 
 These are available but not currently integrated into the main application flow.
+
+## Gamification System
+
+EcoVibe includes a gamification system to encourage user engagement with environmental exploration and community contributions.
+
+### Features
+- **Points System**: Users earn points for:
+  - Dropping pins: 10 points + streak bonus
+  - Exploring locations: 5 points
+  - Earning badges: 25 bonus points each
+
+- **Badges**: Achievement badges awarded for milestones:
+  - First Steps (1 pin), Explorer (5 pins), Naturalist (10 pins), Eco Warrior (25 pins), Guardian (50 pins), Legend (100 pins)
+  - Curious (5 locations explored), Wanderer (15 locations), Globetrotter (50 locations)
+
+- **Levels**: Progress through ranks based on total points:
+  - Newcomer (0), Observer (50), Contributor (150), Advocate (300), Champion (500), Expert (800), Master (1200), Legend (2000)
+
+- **Streak System**: Daily activity bonus (up to 20 extra points per action)
+
+### Implementation
+- **Storage**: Uses localStorage for persistence (no backend required)
+- **Location**: `client/src/lib/gamification.ts` - Core logic
+- **Hook**: `client/src/hooks/use-gamification.ts` - React state management
+- **UI Components**: 
+  - `GamificationPanel.tsx` - Collapsible stats/progress display
+  - `BadgeNotification.tsx` - Badge achievement celebration

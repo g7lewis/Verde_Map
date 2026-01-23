@@ -330,7 +330,7 @@ export default function Home() {
               {analyze.isPending ? (
                 <EnvironmentalCard key="loading" isLoading={true} data={{} as any} />
               ) : analyze.data ? (
-                <EnvironmentalCard key="data" data={analyze.data} />
+                <EnvironmentalCard key="data" data={analyze.data} lat={selectedLocation?.lat} lng={selectedLocation?.lng} />
               ) : !selectedLocation ? (
                 <motion.div 
                   initial={{ opacity: 0 }} 

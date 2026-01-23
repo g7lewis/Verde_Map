@@ -33,6 +33,20 @@ export const api = {
         500: z.object({ message: z.string() }),
       },
     },
+    askQuestion: {
+      method: 'POST' as const,
+      path: '/api/ask',
+      input: z.object({
+        lat: z.number(),
+        lng: z.number(),
+        location: z.string(),
+        question: z.string(),
+      }),
+      responses: {
+        200: z.object({ answer: z.string() }),
+        500: z.object({ message: z.string() }),
+      },
+    },
   },
 };
 

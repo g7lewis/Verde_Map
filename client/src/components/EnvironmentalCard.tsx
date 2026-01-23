@@ -1,5 +1,9 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Wind, Droplets, Footprints, Trees, Trash2, CheckCircle2 } from "lucide-react";
+import { Wind, Droplets, Footprints, Trees, CheckCircle2, MessageCircle, Send, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { apiRequest } from "@/lib/queryClient";
 
 interface ScoreProps {
   label: string;
@@ -53,10 +57,38 @@ interface EnvironmentalCardProps {
       pollution: number; // Cleanliness
     };
   };
+  lat?: number;
+  lng?: number;
   isLoading?: boolean;
 }
 
-export function EnvironmentalCard({ data, isLoading }: EnvironmentalCardProps) {
+export function EnvironmentalCard({ data, lat, lng, isLoading }: EnvironmentalCardProps) {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [isAsking, setIsAsking] = useState(false);
+
+  const handleAskQuestion = async () => {
+    if (!question.trim() || !lat || !lng) return;
+    
+    setIsAsking(true);
+    setAnswer("");
+    
+    try {
+      const response = await apiRequest("/api/ask", "POST", {
+        lat,
+        lng,
+        location: data.location,
+        question: question.trim(),
+      });
+      const result = await response.json();
+      setAnswer(result.answer);
+    } catch (error) {
+      setAnswer("Sorry, I couldn't get an answer. Please try again.");
+    } finally {
+      setIsAsking(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="bg-card/80 backdrop-blur-md border border-white/20 p-6 rounded-3xl shadow-xl w-full max-w-md animate-pulse">
@@ -109,6 +141,46 @@ export function EnvironmentalCard({ data, isLoading }: EnvironmentalCardProps) {
           <p className="mt-4 text-sm text-muted-foreground leading-relaxed bg-secondary/20 p-3 rounded-lg border border-secondary/50">
             {data.summary}
           </p>
+          
+          {/* Ask a Question Section */}
+          <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <div className="flex items-center gap-2 mb-2">
+              <MessageCircle className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">Ask about this place</span>
+            </div>
+            <form 
+              onSubmit={(e) => { e.preventDefault(); handleAskQuestion(); }}
+              className="flex gap-2"
+            >
+              <Input
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="e.g., Best hiking trails nearby?"
+                className="flex-1 h-9 text-sm bg-white border-primary/20"
+                disabled={isAsking}
+                data-testid="input-question"
+              />
+              <Button 
+                type="submit" 
+                size="icon" 
+                disabled={!question.trim() || isAsking}
+                className="h-9 w-9"
+                data-testid="button-ask"
+              >
+                {isAsking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </form>
+            {answer && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="mt-3 p-2 rounded bg-white border border-primary/10 text-sm text-foreground/90"
+                data-testid="text-ai-answer"
+              >
+                {answer}
+              </motion.div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3">

@@ -87,6 +87,39 @@ export async function registerRoutes(
     }
   });
 
+  // Ask Question API
+  app.post(api.analysis.askQuestion.path, async (req, res) => {
+    try {
+      const { lat, lng, location, question } = api.analysis.askQuestion.input.parse(req.body);
+
+      const prompt = `
+        The user is asking about the location "${location}" (Latitude: ${lat}, Longitude: ${lng}).
+        
+        User question: "${question}"
+        
+        Provide a helpful, informative answer about this location related to the question.
+        Focus on environmental, geographic, cultural, or practical information.
+        Keep your answer concise (2-4 sentences) but informative.
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5.1",
+        messages: [
+          { role: "system", content: "You are a helpful environmental and geographic expert. Provide informative answers about locations." },
+          { role: "user", content: prompt }
+        ],
+      });
+
+      const answer = response.choices[0].message.content || "I couldn't find information about that.";
+      
+      res.json({ answer });
+
+    } catch (error) {
+      console.error("Ask question error:", error);
+      res.status(500).json({ message: "Failed to get answer" });
+    }
+  });
+
   // Initial Seed
   const existingPins = await storage.getPins();
   if (existingPins.length === 0) {

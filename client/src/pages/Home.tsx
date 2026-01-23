@@ -10,6 +10,7 @@ import { EnvironmentalCard } from "@/components/EnvironmentalCard";
 import { PinDialog } from "@/components/PinDialog";
 import { GamificationPanel } from "@/components/GamificationPanel";
 import { BadgeNotification } from "@/components/BadgeNotification";
+import { EsriLayers } from "@/components/EsriLayers";
 import { useGamification } from "@/hooks/use-gamification";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -172,7 +173,7 @@ export default function Home() {
             <MapController center={center} />
             <LocationMarker onSelectLocation={(lat, lng) => handleLocationSelect(lat, lng)} />
 
-            {/* Visual Layers (Heatmap/Circle Overlays Simulation) */}
+            {/* Visual Layers */}
             {layers.air && center && (
               <TileLayer
                 url="https://tiles.waqi.info/tiles/usepa-aqi/{z}/{x}/{y}.png?token=demo"
@@ -180,15 +181,11 @@ export default function Home() {
               />
             )}
             
-            {/* Simulation of Water Quality / Pollution with Circles if data available */}
-            {layers.pollution && pins?.filter(p => p.type === 'pollution').map(p => (
-              <Circle 
-                key={`pollute-layer-${p.id}`}
-                center={[p.lat, p.lng]}
-                pathOptions={{ color: 'red', fillColor: 'red', fillOpacity: 0.2 }}
-                radius={500}
-              />
-            ))}
+            {/* ESRI Layers: EPA ECHO (Pollution) and GEMStat (Water Quality) */}
+            <EsriLayers 
+              showEpaEcho={layers.pollution} 
+              showGemsWater={layers.water}
+            />
 
             {/* Current Selection Marker */}
             {selectedLocation && (

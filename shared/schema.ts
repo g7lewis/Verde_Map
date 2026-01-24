@@ -19,6 +19,21 @@ export const insertPinSchema = createInsertSchema(pins).omit({ id: true, created
 export type Pin = typeof pins.$inferSelect;
 export type InsertPin = z.infer<typeof insertPinSchema>;
 
+// Email subscribers for air quality alerts
+export const emailSubscribers = pgTable("email_subscribers", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
+  locationName: text("location_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertEmailSubscriberSchema = createInsertSchema(emailSubscribers).omit({ id: true, createdAt: true });
+
+export type EmailSubscriber = typeof emailSubscribers.$inferSelect;
+export type InsertEmailSubscriber = z.infer<typeof insertEmailSubscriberSchema>;
+
 // Score detail schema for expandable rating information
 export const scoreDetailSchema = z.object({
   value: z.number(),

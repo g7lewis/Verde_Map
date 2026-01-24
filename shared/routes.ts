@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertPinSchema, pins, analysisResponseSchema } from './schema';
+import { insertPinSchema, pins, analysisResponseSchema, insertEmailSubscriberSchema, emailSubscribers } from './schema';
 
 export const api = {
   pins: {
@@ -17,6 +17,23 @@ export const api = {
       responses: {
         201: z.custom<typeof pins.$inferSelect>(),
         400: z.object({ message: z.string() }),
+      },
+    },
+  },
+  subscribers: {
+    create: {
+      method: 'POST' as const,
+      path: '/api/subscribe',
+      input: z.object({
+        email: z.string().email(),
+        lat: z.number().optional(),
+        lng: z.number().optional(),
+        locationName: z.string().optional(),
+      }),
+      responses: {
+        201: z.object({ message: z.string() }),
+        400: z.object({ message: z.string() }),
+        409: z.object({ message: z.string() }),
       },
     },
   },

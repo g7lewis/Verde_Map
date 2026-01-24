@@ -234,6 +234,34 @@ Return ONLY valid JSON.
     }
   });
 
+  // Email Subscription API
+  app.post(api.subscribers.create.path, async (req, res) => {
+    try {
+      const input = api.subscribers.create.input.parse(req.body);
+      
+      // Check if already subscribed
+      const existing = await storage.getEmailSubscriberByEmail(input.email);
+      if (existing) {
+        return res.status(409).json({ message: "This email is already subscribed" });
+      }
+      
+      await storage.createEmailSubscriber({
+        email: input.email,
+        lat: input.lat || null,
+        lng: input.lng || null,
+        locationName: input.locationName || null,
+      });
+      
+      res.status(201).json({ message: "Successfully subscribed to environmental alerts!" });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      console.error("Subscription error:", err);
+      res.status(500).json({ message: "Failed to subscribe" });
+    }
+  });
+
   // Initial Seed
   const existingPins = await storage.getPins();
   if (existingPins.length === 0) {

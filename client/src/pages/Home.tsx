@@ -506,22 +506,6 @@ export default function Home() {
                   isMinimized={isCardMinimized}
                   onToggleMinimize={handleToggleMinimize}
                 />
-              ) : !selectedLocation ? (
-                <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }}
-                  className="bg-white/95 backdrop-blur-md p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-xl border border-white/50"
-                >
-                  <h3 className="text-lg md:text-xl font-bold font-display text-primary mb-2">Welcome to EcoVibe</h3>
-                  <p className="text-sm md:text-base text-muted-foreground">
-                    Tap anywhere on the map to see its environmental vibe score.
-                  </p>
-                  <div className="mt-3 md:mt-4 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm text-muted-foreground/80">
-                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-orange-600"/>Wildlife</div>
-                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-600"/>Trails</div>
-                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-600"/>Issues</div>
-                  </div>
-                </motion.div>
               ) : null}
             </AnimatePresence>
 

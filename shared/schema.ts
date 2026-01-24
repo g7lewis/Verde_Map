@@ -19,6 +19,13 @@ export const insertPinSchema = createInsertSchema(pins).omit({ id: true, created
 export type Pin = typeof pins.$inferSelect;
 export type InsertPin = z.infer<typeof insertPinSchema>;
 
+// Score detail schema for expandable rating information
+export const scoreDetailSchema = z.object({
+  value: z.number(),
+  factors: z.array(z.string()),
+  tips: z.array(z.string()).optional(),
+});
+
 export const analysisResponseSchema = z.object({
   location: z.string(),
   summary: z.string(),
@@ -27,18 +34,15 @@ export const analysisResponseSchema = z.object({
     waterQuality: z.number(),
     walkability: z.number(),
     greenSpace: z.number(),
-    pollution: z.number(), // This might be "negative factors" score, let's say 0-100 where 100 is bad or good? Let's say 0-100 where 100 is CLEAN (low pollution). Or 100 is HIGH pollution?
-    // Let's make all scores "Quality" scores (0-100, 100 is best).
-    // So "Pollution" -> "Cleanliness"? Or just "Pollution" where 0 is good? 
-    // The prompt says "negative factors like pollution sources". 
-    // Let's stick to "environmental vibe". 
-    // Scores: 0-100. 
-    // Air Quality: 100 = Excellent.
-    // Water Quality: 100 = Excellent.
-    // Walkability: 100 = Walker's Paradise.
-    // Green Space: 100 = Very Green.
-    // Overall Vibe: 100 = Perfect.
+    pollution: z.number(),
   }),
+  scoreDetails: z.object({
+    airQuality: scoreDetailSchema,
+    waterQuality: scoreDetailSchema,
+    walkability: scoreDetailSchema,
+    greenSpace: scoreDetailSchema,
+    pollution: scoreDetailSchema,
+  }).optional(),
 });
 
 export type AnalysisResponse = z.infer<typeof analysisResponseSchema>;

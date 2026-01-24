@@ -76,11 +76,17 @@ Provide a JSON response with the following fields:
   - walkability (100 is best)
   - greenSpace (100 is best)
   - pollution (100 is cleanest/least pollution) - directly affected by EPA facility count and violations
-- epaContext: An object with:
-  - totalFacilities: number of EPA-regulated facilities nearby
-  - majorEmitters: number of major emitters
-  - facilitiesWithViolations: number with compliance issues
-  - topIndustries: array of top 3 industry types present (or empty array if none)
+- scoreDetails: An object with detailed breakdown for each score category. Each has:
+  - value: the score (same as in scores)
+  - factors: array of 2-4 brief reasons affecting this score (e.g., "Heavy industrial activity within 5 miles", "Multiple EPA facilities with violations")
+  - tips: array of 1-2 suggestions for improvement or things to be aware of
+  
+Example scoreDetails entry:
+"airQuality": {
+  "value": 45,
+  "factors": ["73 major emitters within 10 miles", "Petrochemical industry presence", "Highway traffic corridor"],
+  "tips": ["Check daily AQI before outdoor activities", "Consider indoor air filtration"]
+}
 
 Return ONLY valid JSON.
       `;

@@ -14,12 +14,20 @@ export function EsriLayers({ showEpaEcho, showGemsWater }: EsriLayersProps) {
     let epaLayer: any = null;
     
     if (showEpaEcho) {
-      epaLayer = esriLeaflet.dynamicMapLayer({
-        url: "https://echogeo.epa.gov/arcgis/rest/services/ECHO/Facilities/MapServer",
-        opacity: 0.7,
-        layers: [0],
-        layerDefs: {
-          0: "FAC_MAJOR_FLAG = 'Y' OR FAC_QTRS_WITH_NC > 0 OR FAC_COMPLIANCE_STATUS = 'Significant Violation' OR FAC_NAICS LIKE '324%' OR FAC_NAICS LIKE '562%' OR FAC_NAICS LIKE '325%' OR FAC_NAICS LIKE '221%' OR FAC_NAICS LIKE '331%' OR FAC_NAICS LIKE '332%'"
+      // Use FeatureLayer for better rendering of EPA facilities
+      // Correct field names: FAC_NAICS_CODES, FAC_QTRS_IN_NC, FAC_CURR_SNC_FLG
+      epaLayer = esriLeaflet.featureLayer({
+        url: "https://echogeo.epa.gov/arcgis/rest/services/ECHO/Facilities/MapServer/0",
+        where: "FAC_MAJOR_FLAG = 'Y' OR FAC_CURR_SNC_FLG = 'Y' OR FAC_QTRS_IN_NC > 0 OR FAC_NAICS_CODES LIKE '324%' OR FAC_NAICS_CODES LIKE '562%' OR FAC_NAICS_CODES LIKE '325%' OR FAC_NAICS_CODES LIKE '221%' OR FAC_NAICS_CODES LIKE '331%'",
+        pointToLayer: function(_geojson: any, latlng: any) {
+          return (window as any).L.circleMarker(latlng, {
+            radius: 6,
+            fillColor: "#ef4444",
+            color: "#b91c1c",
+            weight: 1,
+            opacity: 0.9,
+            fillOpacity: 0.7
+          });
         }
       });
       epaLayer.addTo(map);

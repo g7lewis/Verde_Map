@@ -1,47 +1,115 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Wind, Droplets, Footprints, Trees, CheckCircle2, MessageCircle, Send, Loader2, Factory, AlertTriangle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Wind, Droplets, Footprints, Trees, CheckCircle2, MessageCircle, Send, Loader2, Factory, AlertTriangle, ChevronDown, Lightbulb, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
+
+interface ScoreDetail {
+  value: number;
+  factors: string[];
+  tips?: string[];
+}
 
 interface ScoreProps {
   label: string;
   value: number;
   icon: any;
   colorClass: string;
-  description?: string;
+  detail?: ScoreDetail;
+  testId?: string;
 }
 
-function ScoreRow({ label, value, icon: Icon, colorClass, description }: ScoreProps) {
-  // Determine color based on score
+function ScoreRow({ label, value, icon: Icon, colorClass, detail, testId }: ScoreProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   let statusColor = "bg-red-500";
   if (value >= 70) statusColor = "bg-green-500";
   else if (value >= 40) statusColor = "bg-yellow-500";
 
+  const hasDetails = detail && (detail.factors?.length > 0 || detail.tips?.length);
+
   return (
-    <div className="group p-3 rounded-xl bg-secondary/30 hover:bg-secondary/60 transition-colors">
-      <div className="flex items-center gap-3 mb-2">
-        <div className={`p-2 rounded-lg bg-white shadow-sm ${colorClass}`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <div className="flex-1">
-          <div className="flex justify-between items-center mb-1">
-            <span className="font-semibold text-sm text-foreground/80">{label}</span>
-            <span className="font-bold text-foreground">{value}/100</span>
+    <div className="rounded-xl bg-secondary/30 transition-colors overflow-hidden">
+      <button
+        onClick={() => hasDetails && setIsExpanded(!isExpanded)}
+        className={`w-full p-3 text-left hover:bg-secondary/60 transition-colors ${hasDetails ? 'cursor-pointer' : 'cursor-default'}`}
+        data-testid={testId}
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <div className={`p-2 rounded-lg bg-white shadow-sm ${colorClass}`}>
+            <Icon className="w-5 h-5" />
           </div>
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${value}%` }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className={`h-full ${statusColor}`} 
-            />
+          <div className="flex-1">
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-semibold text-sm text-foreground/80">{label}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-foreground">{value}/100</span>
+                {hasDetails && (
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                )}
+              </div>
+            </div>
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${value}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className={`h-full ${statusColor}`} 
+              />
+            </div>
           </div>
         </div>
-      </div>
-      {description && <p className="text-xs text-muted-foreground ml-11">{description}</p>}
+      </button>
+      
+      <AnimatePresence>
+        {isExpanded && hasDetails && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 space-y-2" data-testid={`${testId}-details`}>
+              {detail.factors && detail.factors.length > 0 && (
+                <div className="ml-11 p-2 rounded-lg bg-white/50 border border-secondary">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Info className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Contributing Factors</span>
+                  </div>
+                  <ul className="space-y-1">
+                    {detail.factors.map((factor, i) => (
+                      <li key={i} className="text-xs text-foreground/80 flex items-start gap-1">
+                        <span className="text-muted-foreground mt-0.5">•</span>
+                        {factor}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {detail.tips && detail.tips.length > 0 && (
+                <div className="ml-11 p-2 rounded-lg bg-amber-50 border border-amber-200">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Lightbulb className="w-3 h-3 text-amber-600" />
+                    <span className="text-xs font-medium text-amber-700">Tips</span>
+                  </div>
+                  <ul className="space-y-1">
+                    {detail.tips.map((tip, i) => (
+                      <li key={i} className="text-xs text-amber-800 flex items-start gap-1">
+                        <span className="text-amber-500 mt-0.5">•</span>
+                        {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -56,6 +124,13 @@ interface EnvironmentalCardProps {
       walkability: number;
       greenSpace: number;
       pollution: number;
+    };
+    scoreDetails?: {
+      airQuality?: ScoreDetail;
+      waterQuality?: ScoreDetail;
+      walkability?: ScoreDetail;
+      greenSpace?: ScoreDetail;
+      pollution?: ScoreDetail;
     };
     epaContext?: {
       totalFacilities: number;
@@ -234,32 +309,46 @@ export function EnvironmentalCard({ data, lat, lng, isLoading }: EnvironmentalCa
             value={data.scores.airQuality} 
             icon={Wind} 
             colorClass="text-sky-500"
+            detail={data.scoreDetails?.airQuality}
+            testId="score-air-quality"
           />
           <ScoreRow 
             label="Water Quality" 
             value={data.scores.waterQuality} 
             icon={Droplets} 
             colorClass="text-blue-500"
+            detail={data.scoreDetails?.waterQuality}
+            testId="score-water-quality"
           />
           <ScoreRow 
             label="Walkability" 
             value={data.scores.walkability} 
             icon={Footprints} 
             colorClass="text-orange-500"
+            detail={data.scoreDetails?.walkability}
+            testId="score-walkability"
           />
           <ScoreRow 
             label="Green Space" 
             value={data.scores.greenSpace} 
             icon={Trees} 
             colorClass="text-green-600"
+            detail={data.scoreDetails?.greenSpace}
+            testId="score-green-space"
           />
           <ScoreRow 
             label="Cleanliness" 
             value={data.scores.pollution} 
             icon={CheckCircle2} 
             colorClass="text-purple-500"
+            detail={data.scoreDetails?.pollution}
+            testId="score-cleanliness"
           />
         </div>
+        
+        <p className="text-xs text-center text-muted-foreground mt-2">
+          Click any score to see detailed factors
+        </p>
         
         <div className="mt-6 text-center pb-2">
           <p className="text-xs text-muted-foreground italic">

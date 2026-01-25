@@ -176,7 +176,7 @@ Walkability: ${scores.walkability}/100
 Green Space: ${scores.greenSpace}/100
 Pollution: ${scores.pollution}/100
 
-Explore environmental data at EcoVibe`;
+Explore environmental data at Verde`;
 
     const shareUrl = window.location.href;
     
@@ -184,7 +184,7 @@ Explore environmental data at EcoVibe`;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `EcoVibe - ${data.location}`,
+          title: `Verde - ${data.location}`,
           text: shareText,
           url: shareUrl,
         });
@@ -542,7 +542,7 @@ Explore environmental data at EcoVibe`;
         
         <div className="mt-6 text-center pb-2">
           <p className="text-xs text-muted-foreground italic">
-            Analysis powered by EcoVibe AI with real EPA ECHO facility data.
+            Analysis powered by Verde AI with real EPA ECHO facility data.
           </p>
         </div>
       </div>

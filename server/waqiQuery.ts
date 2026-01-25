@@ -21,7 +21,7 @@ export async function queryAirQuality(lat: number, lng: number): Promise<WaqiDat
       `https://api.waqi.info/feed/geo:${lat};${lng}/?token=${token}`,
       {
         headers: {
-          'User-Agent': 'EcoVibe/1.0 (environmental mapping app)',
+          'User-Agent': 'Verde/1.0 (environmental mapping app)',
         }
       }
     );

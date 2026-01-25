@@ -1,8 +1,8 @@
-# EcoVibe - Environmental Quality Mapping Application
+# Verde - Environmental Quality Mapping Application
 
 ## Overview
 
-EcoVibe is an interactive environmental quality mapping application that allows users to explore location-based environmental data and contribute community observations. Users can click anywhere on a map to get AI-powered environmental analysis (air quality, water quality, walkability, green space scores) and drop pins to mark wildlife sightings, pollution sources, trails, or other environmental observations.
+Verde is an interactive environmental quality mapping application that allows users to explore location-based environmental data and contribute community observations. Users can click anywhere on a map to get AI-powered environmental analysis (air quality, water quality, walkability, green space scores) and drop pins to mark wildlife sightings, pollution sources, trails, or other environmental observations.
 
 The application follows a full-stack TypeScript architecture with a React frontend using Leaflet maps and a Node.js/Express backend that integrates with OpenAI for environmental analysis.
 
@@ -98,7 +98,7 @@ These are available but not currently integrated into the main application flow.
 
 ## Gamification System
 
-EcoVibe includes a gamification system to encourage user engagement with environmental exploration and community contributions.
+Verde includes a gamification system to encourage user engagement with environmental exploration and community contributions.
 
 ### Features
 - **Points System**: Users earn points for:

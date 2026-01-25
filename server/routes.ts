@@ -15,7 +15,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1&accept-language=en`,
       {
         headers: {
-          'User-Agent': 'EcoVibe/1.0 (environmental mapping app)',
+          'User-Agent': 'Verde/1.0 (environmental mapping app)',
           'Accept-Language': 'en'
         }
       }

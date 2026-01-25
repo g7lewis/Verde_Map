@@ -373,146 +373,6 @@ Explore environmental data at Verde`;
           <p className="mt-4 text-sm text-muted-foreground leading-relaxed bg-secondary/20 p-3 rounded-lg border border-secondary/50">
             {data.summary}
           </p>
-
-          {/* Real-time AQI Data */}
-          {data.aqiContext ? (
-            <div className="mt-4 p-3 rounded-lg bg-sky-50 border border-sky-200" data-testid="section-aqi-context">
-              <div className="flex items-center gap-2 mb-2">
-                <Wind className="w-4 h-4 text-sky-600" />
-                <span className="text-sm font-medium text-sky-800">Real-time Air Quality</span>
-              </div>
-              <div className="flex items-center gap-3 mb-2">
-                <div 
-                  className={`text-center p-2 px-4 rounded border ${
-                    data.aqiContext.aqi <= 50 ? 'bg-green-100 border-green-200' :
-                    data.aqiContext.aqi <= 100 ? 'bg-yellow-100 border-yellow-200' :
-                    data.aqiContext.aqi <= 150 ? 'bg-orange-100 border-orange-200' :
-                    'bg-red-100 border-red-200'
-                  }`}
-                  data-testid="badge-aqi-value"
-                >
-                  <div className={`text-2xl font-bold ${
-                    data.aqiContext.aqi <= 50 ? 'text-green-700' :
-                    data.aqiContext.aqi <= 100 ? 'text-yellow-700' :
-                    data.aqiContext.aqi <= 150 ? 'text-orange-700' :
-                    'text-red-700'
-                  }`}>{data.aqiContext.aqi}</div>
-                  <div className="text-xs text-muted-foreground">AQI</div>
-                </div>
-                <div className="flex-1">
-                  <div 
-                    className={`text-sm font-medium ${
-                      data.aqiContext.aqi <= 50 ? 'text-green-700' :
-                      data.aqiContext.aqi <= 100 ? 'text-yellow-700' :
-                      data.aqiContext.aqi <= 150 ? 'text-orange-700' :
-                      'text-red-700'
-                    }`}
-                    data-testid="text-aqi-category"
-                  >{data.aqiContext.category}</div>
-                  {data.aqiContext.dominantPollutant && (
-                    <div className="text-xs text-muted-foreground" data-testid="text-aqi-pollutant">
-                      Main pollutant: {data.aqiContext.dominantPollutant.toUpperCase()}
-                    </div>
-                  )}
-                  {data.aqiContext.station && (
-                    <div className="text-xs text-muted-foreground truncate" title={data.aqiContext.station} data-testid="text-aqi-station">
-                      Station: {data.aqiContext.station}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-muted" data-testid="section-aqi-unavailable">
-              <div className="flex items-center gap-2">
-                <Wind className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Real-time air quality data unavailable for this location</span>
-              </div>
-            </div>
-          )}
-
-          {/* EPA Facility Context */}
-          {data.epaContext && data.epaContext.totalFacilities > 0 && (
-            <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200" data-testid="section-epa-context">
-              <div className="flex items-center gap-2 mb-2">
-                <Factory className="w-4 h-4 text-amber-600" />
-                <span className="text-sm font-medium text-amber-800">EPA Facility Data (10 mi radius)</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                <div className="text-center p-2 bg-white rounded border border-amber-100">
-                  <div className="text-lg font-bold text-foreground">{data.epaContext.totalFacilities}</div>
-                  <div className="text-xs text-muted-foreground">Facilities</div>
-                </div>
-                <div className="text-center p-2 bg-white rounded border border-amber-100">
-                  <div className="text-lg font-bold text-foreground">{data.epaContext.majorEmitters}</div>
-                  <div className="text-xs text-muted-foreground">Major</div>
-                </div>
-                <div className={`text-center p-2 bg-white rounded border ${data.epaContext.facilitiesWithViolations > 0 ? 'border-red-200 bg-red-50' : 'border-amber-100'}`}>
-                  <div className={`text-lg font-bold ${data.epaContext.facilitiesWithViolations > 0 ? 'text-red-600' : 'text-foreground'}`}>
-                    {data.epaContext.facilitiesWithViolations}
-                  </div>
-                  <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                    {data.epaContext.facilitiesWithViolations > 0 && <AlertTriangle className="w-3 h-3 text-red-500" />}
-                    Violations
-                  </div>
-                </div>
-              </div>
-              {data.epaContext.topIndustries && data.epaContext.topIndustries.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {data.epaContext.topIndustries.map((industry, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs bg-amber-100 text-amber-800 border-amber-200">
-                      {industry}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Climate TRACE Global Emissions Data */}
-          {data.climateTraceContext && data.climateTraceContext.sourcesCount > 0 && (
-            <div className="mt-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200" data-testid="section-climate-trace">
-              <div className="flex items-center gap-2 mb-2">
-                <Factory className="w-4 h-4 text-emerald-600" />
-                <span className="text-sm font-medium text-emerald-800">Climate TRACE National Emissions</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <div className="text-center p-2 bg-white rounded border border-emerald-100">
-                  <div className="text-lg font-bold text-foreground">{data.climateTraceContext.sourcesCount}</div>
-                  <div className="text-xs text-muted-foreground">Emission Sources</div>
-                </div>
-                <div className="text-center p-2 bg-white rounded border border-emerald-100">
-                  <div className="text-lg font-bold text-foreground">{data.climateTraceContext.totalEmissionsFormatted}</div>
-                  <div className="text-xs text-muted-foreground">tonnes CO2e/yr</div>
-                </div>
-              </div>
-              {data.climateTraceContext.sectorBreakdown.length > 0 && (
-                <div className="mb-2">
-                  <div className="text-xs text-emerald-700 font-medium mb-1">By Sector:</div>
-                  <div className="flex flex-wrap gap-1">
-                    {data.climateTraceContext.sectorBreakdown.map((sector, i) => (
-                      <Badge key={i} variant="secondary" className="text-xs bg-emerald-100 text-emerald-800 border-emerald-200">
-                        {sector.sector}: {sector.emissionsFormatted}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {data.climateTraceContext.topSources.length > 0 && (
-                <div>
-                  <div className="text-xs text-emerald-700 font-medium mb-1">Top Emitters:</div>
-                  <div className="space-y-1">
-                    {data.climateTraceContext.topSources.slice(0, 3).map((source, i) => (
-                      <div key={i} className="text-xs text-muted-foreground">
-                        <span className="text-foreground">{source.name}</span>
-                        <span className="text-emerald-700 font-medium ml-1">({source.emissionsFormatted || 'N/A'})</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
           
           {/* Ask a Question Section */}
           <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
@@ -601,6 +461,146 @@ Explore environmental data at Verde`;
         <p className="text-xs text-center text-muted-foreground mt-2">
           Click any score to see detailed factors
         </p>
+
+        {/* Real-time AQI Data */}
+        {data.aqiContext ? (
+          <div className="mt-4 p-3 rounded-lg bg-sky-50 border border-sky-200" data-testid="section-aqi-context">
+            <div className="flex items-center gap-2 mb-2">
+              <Wind className="w-4 h-4 text-sky-600" />
+              <span className="text-sm font-medium text-sky-800">Real-time Air Quality</span>
+            </div>
+            <div className="flex items-center gap-3 mb-2">
+              <div 
+                className={`text-center p-2 px-4 rounded border ${
+                  data.aqiContext.aqi <= 50 ? 'bg-green-100 border-green-200' :
+                  data.aqiContext.aqi <= 100 ? 'bg-yellow-100 border-yellow-200' :
+                  data.aqiContext.aqi <= 150 ? 'bg-orange-100 border-orange-200' :
+                  'bg-red-100 border-red-200'
+                }`}
+                data-testid="badge-aqi-value"
+              >
+                <div className={`text-2xl font-bold ${
+                  data.aqiContext.aqi <= 50 ? 'text-green-700' :
+                  data.aqiContext.aqi <= 100 ? 'text-yellow-700' :
+                  data.aqiContext.aqi <= 150 ? 'text-orange-700' :
+                  'text-red-700'
+                }`}>{data.aqiContext.aqi}</div>
+                <div className="text-xs text-muted-foreground">AQI</div>
+              </div>
+              <div className="flex-1">
+                <div 
+                  className={`text-sm font-medium ${
+                    data.aqiContext.aqi <= 50 ? 'text-green-700' :
+                    data.aqiContext.aqi <= 100 ? 'text-yellow-700' :
+                    data.aqiContext.aqi <= 150 ? 'text-orange-700' :
+                    'text-red-700'
+                  }`}
+                  data-testid="text-aqi-category"
+                >{data.aqiContext.category}</div>
+                {data.aqiContext.dominantPollutant && (
+                  <div className="text-xs text-muted-foreground" data-testid="text-aqi-pollutant">
+                    Main pollutant: {data.aqiContext.dominantPollutant.toUpperCase()}
+                  </div>
+                )}
+                {data.aqiContext.station && (
+                  <div className="text-xs text-muted-foreground truncate" title={data.aqiContext.station} data-testid="text-aqi-station">
+                    Station: {data.aqiContext.station}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-muted" data-testid="section-aqi-unavailable">
+            <div className="flex items-center gap-2">
+              <Wind className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Real-time air quality data unavailable for this location</span>
+            </div>
+          </div>
+        )}
+
+        {/* EPA Facility Context */}
+        {data.epaContext && data.epaContext.totalFacilities > 0 && (
+          <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200" data-testid="section-epa-context">
+            <div className="flex items-center gap-2 mb-2">
+              <Factory className="w-4 h-4 text-amber-600" />
+              <span className="text-sm font-medium text-amber-800">EPA Facility Data (10 mi radius)</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <div className="text-center p-2 bg-white rounded border border-amber-100">
+                <div className="text-lg font-bold text-foreground">{data.epaContext.totalFacilities}</div>
+                <div className="text-xs text-muted-foreground">Facilities</div>
+              </div>
+              <div className="text-center p-2 bg-white rounded border border-amber-100">
+                <div className="text-lg font-bold text-foreground">{data.epaContext.majorEmitters}</div>
+                <div className="text-xs text-muted-foreground">Major</div>
+              </div>
+              <div className={`text-center p-2 bg-white rounded border ${data.epaContext.facilitiesWithViolations > 0 ? 'border-red-200 bg-red-50' : 'border-amber-100'}`}>
+                <div className={`text-lg font-bold ${data.epaContext.facilitiesWithViolations > 0 ? 'text-red-600' : 'text-foreground'}`}>
+                  {data.epaContext.facilitiesWithViolations}
+                </div>
+                <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                  {data.epaContext.facilitiesWithViolations > 0 && <AlertTriangle className="w-3 h-3 text-red-500" />}
+                  Violations
+                </div>
+              </div>
+            </div>
+            {data.epaContext.topIndustries && data.epaContext.topIndustries.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {data.epaContext.topIndustries.map((industry, i) => (
+                  <Badge key={i} variant="secondary" className="text-xs bg-amber-100 text-amber-800 border-amber-200">
+                    {industry}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Climate TRACE Global Emissions Data */}
+        {data.climateTraceContext && data.climateTraceContext.sourcesCount > 0 && (
+          <div className="mt-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200" data-testid="section-climate-trace">
+            <div className="flex items-center gap-2 mb-2">
+              <Factory className="w-4 h-4 text-emerald-600" />
+              <span className="text-sm font-medium text-emerald-800">Climate TRACE National Emissions</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="text-center p-2 bg-white rounded border border-emerald-100">
+                <div className="text-lg font-bold text-foreground">{data.climateTraceContext.sourcesCount}</div>
+                <div className="text-xs text-muted-foreground">Emission Sources</div>
+              </div>
+              <div className="text-center p-2 bg-white rounded border border-emerald-100">
+                <div className="text-lg font-bold text-foreground">{data.climateTraceContext.totalEmissionsFormatted}</div>
+                <div className="text-xs text-muted-foreground">tonnes CO2e/yr</div>
+              </div>
+            </div>
+            {data.climateTraceContext.sectorBreakdown.length > 0 && (
+              <div className="mb-2">
+                <div className="text-xs text-emerald-700 font-medium mb-1">By Sector:</div>
+                <div className="flex flex-wrap gap-1">
+                  {data.climateTraceContext.sectorBreakdown.map((sector, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs bg-emerald-100 text-emerald-800 border-emerald-200">
+                      {sector.sector}: {sector.emissionsFormatted}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {data.climateTraceContext.topSources.length > 0 && (
+              <div>
+                <div className="text-xs text-emerald-700 font-medium mb-1">Top Emitters:</div>
+                <div className="space-y-1">
+                  {data.climateTraceContext.topSources.slice(0, 3).map((source, i) => (
+                    <div key={i} className="text-xs text-muted-foreground">
+                      <span className="text-foreground">{source.name}</span>
+                      <span className="text-emerald-700 font-medium ml-1">({source.emissionsFormatted || 'N/A'})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         
         <div className="mt-6 text-center pb-2">
           <p className="text-xs text-muted-foreground italic">

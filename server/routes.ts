@@ -6,7 +6,7 @@ import { z } from "zod";
 import OpenAI from "openai";
 import { queryNearbyEpaFacilities } from "./epaQuery";
 import { queryAirQuality, aqiToScore, getAqiCategory } from "./waqiQuery";
-import { queryClimateTraceSources, formatEmissions, getSectorLabel } from "./climateTraceQuery";
+import { queryClimateTraceSources, queryClimateTraceSourcesForMap, formatEmissions, getSectorLabel, ClimateTraceSource } from "./climateTraceQuery";
 
 // Reverse geocode coordinates to get accurate location name
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
@@ -354,6 +354,38 @@ Return ONLY valid JSON.
       }
       console.error("Subscription error:", err);
       res.status(500).json({ message: "Failed to subscribe" });
+    }
+  });
+
+  // Climate TRACE emissions sources for map display
+  app.get("/api/emissions-sources", async (req, res) => {
+    try {
+      const lat = parseFloat(req.query.lat as string);
+      const lng = parseFloat(req.query.lng as string);
+      const radius = parseFloat(req.query.radius as string) || 100;
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        return res.status(400).json({ message: "Valid lat and lng are required" });
+      }
+      
+      const sources = await queryClimateTraceSourcesForMap(lat, lng, radius);
+      
+      res.json({
+        sources: sources.map(s => ({
+          id: s.id,
+          name: s.name,
+          sector: s.sector,
+          sectorLabel: getSectorLabel(s.sector),
+          lat: s.lat,
+          lng: s.lng,
+          emissions: s.emissions,
+          emissionsFormatted: s.emissionsFormatted,
+        })),
+        count: sources.length,
+      });
+    } catch (err) {
+      console.error("Emissions sources error:", err);
+      res.status(500).json({ message: "Failed to fetch emissions sources" });
     }
   });
 

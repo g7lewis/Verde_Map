@@ -1,4 +1,4 @@
-interface ClimateTraceSource {
+export interface ClimateTraceSource {
   id: string | number;
   name: string;
   sector: string;
@@ -6,11 +6,12 @@ interface ClimateTraceSource {
   lat: number | null;
   lng: number | null;
   emissions: number | null;
+  emissionsFormatted?: string;
   emissionsUnit: string;
   country: string;
 }
 
-interface ClimateTraceResult {
+export interface ClimateTraceResult {
   sources: ClimateTraceSource[];
   totalEmissions: number;
   sectorBreakdown: Record<string, { count: number; emissions: number }>;
@@ -120,15 +121,35 @@ export async function queryClimateTraceSources(
           emissions = co2Summary.EmissionsQuantity;
         }
       }
+      
+      let assetLat: number | null = null;
+      let assetLng: number | null = null;
+      
+      if (asset.geometry && asset.geometry.coordinates) {
+        assetLng = asset.geometry.coordinates[0];
+        assetLat = asset.geometry.coordinates[1];
+      } else if (asset.Lat !== undefined && asset.Lon !== undefined) {
+        assetLat = asset.Lat;
+        assetLng = asset.Lon;
+      } else if (asset.lat !== undefined && asset.lon !== undefined) {
+        assetLat = asset.lat;
+        assetLng = asset.lon;
+      } else if (asset.latitude !== undefined && asset.longitude !== undefined) {
+        assetLat = asset.latitude;
+        assetLng = asset.longitude;
+      }
+      
+      const props = asset.properties || asset;
 
       sources.push({
-        id: asset.Id || asset.id || Math.random().toString(36).slice(2),
-        name: asset.Name || asset.name || "Unknown Source",
-        sector: sector,
-        subsector: asset.AssetType || "",
-        lat: null,
-        lng: null,
+        id: props.source_id || props.Id || asset.id || Math.random().toString(36).slice(2),
+        name: props.source_name || props.Name || asset.name || "Unknown Source",
+        sector: props.sector || sector,
+        subsector: props.subsector || props.AssetType || "",
+        lat: assetLat,
+        lng: assetLng,
         emissions: emissions,
+        emissionsFormatted: emissions ? formatEmissions(emissions) : undefined,
         emissionsUnit: "tonnes CO2e/yr",
         country: iso3,
       });
@@ -251,4 +272,122 @@ export function formatEmissions(tonnes: number): string {
 
 export function getSectorLabel(sector: string): string {
   return SECTOR_LABELS[sector] || sector.charAt(0).toUpperCase() + sector.slice(1).replace(/-/g, ' ');
+}
+
+export async function queryClimateTraceSourcesForMap(
+  lat: number,
+  lng: number,
+  radiusKm: number = 100
+): Promise<ClimateTraceSource[]> {
+  try {
+    const countryCode = await getCountryCode(lat, lng);
+    if (!countryCode) {
+      console.log("Climate TRACE Map: Could not determine country code for", lat, lng);
+      return [];
+    }
+
+    const iso3 = iso2ToIso3(countryCode);
+    if (iso3.length !== 3) {
+      console.log("Climate TRACE Map: Invalid ISO3 code:", iso3);
+      return [];
+    }
+
+    const params = new URLSearchParams({
+      countries: iso3,
+      year: "2022",
+      limit: "200",
+    });
+
+    const url = `https://api.climatetrace.org/v6/assets?${params.toString()}`;
+    console.log("Climate TRACE Map query:", url);
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Verde/1.0 (environmental mapping app)',
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      console.warn("Climate TRACE Map API error:", response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    
+    let features: any[] = [];
+    if (Array.isArray(data)) {
+      features = data;
+    } else if (data && Array.isArray(data.assets)) {
+      features = data.assets;
+    } else {
+      console.log("Climate TRACE Map: Unexpected response format");
+      return [];
+    }
+
+    const sources: ClimateTraceSource[] = [];
+    
+    for (const feature of features) {
+      let assetLat: number | null = null;
+      let assetLng: number | null = null;
+      
+      if (feature.geometry && feature.geometry.coordinates) {
+        assetLng = feature.geometry.coordinates[0];
+        assetLat = feature.geometry.coordinates[1];
+      }
+      
+      if (assetLat === null || assetLng === null) continue;
+      
+      const distance = haversineDistance(lat, lng, assetLat, assetLng);
+      if (distance > radiusKm) continue;
+      
+      const props = feature.properties || feature;
+      
+      let emissions: number | null = null;
+      if (props.emissions_quantity) {
+        emissions = props.emissions_quantity;
+      } else if (props.EmissionsSummary && Array.isArray(props.EmissionsSummary)) {
+        const co2Summary = props.EmissionsSummary.find(
+          (s: any) => s.Gas === "co2e_100yr" || s.Gas === "co2e" || s.Gas === "co2"
+        );
+        if (co2Summary && co2Summary.EmissionsQuantity) {
+          emissions = co2Summary.EmissionsQuantity;
+        }
+      }
+
+      sources.push({
+        id: feature.id || props.source_id || Math.random().toString(36).slice(2),
+        name: props.source_name || props.Name || "Unknown Source",
+        sector: props.sector || props.Sector || "other",
+        subsector: props.subsector || props.AssetType || "",
+        lat: assetLat,
+        lng: assetLng,
+        emissions: emissions,
+        emissionsFormatted: emissions ? formatEmissions(emissions) : undefined,
+        emissionsUnit: "tonnes CO2e/yr",
+        country: iso3,
+      });
+    }
+
+    sources.sort((a, b) => (b.emissions || 0) - (a.emissions || 0));
+    
+    console.log(`Climate TRACE Map: Found ${sources.length} sources within ${radiusKm}km`);
+    
+    return sources.slice(0, 100);
+  } catch (error) {
+    console.error("Climate TRACE Map query failed:", error);
+    return [];
+  }
+}
+
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }

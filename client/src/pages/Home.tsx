@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +97,17 @@ export default function Home() {
   const [isCardMinimized, setIsCardMinimized] = useState(false);
   const [isCardVisible, setIsCardVisible] = useState(true);
   const [showLayerMenu, setShowLayerMenu] = useState(false);
+  const [emissionsSources, setEmissionsSources] = useState<Array<{
+    id: string | number;
+    name: string;
+    sector: string;
+    sectorLabel: string;
+    lat: number;
+    lng: number;
+    emissions: number | null;
+    emissionsFormatted?: string;
+  }>>([]);
+  const [loadingEmissions, setLoadingEmissions] = useState(false);
   const { toast } = useToast();
 
   const { data: pins } = usePins();
@@ -136,6 +147,31 @@ export default function Home() {
     
     return () => clearTimeout(timeoutId);
   }, []);
+
+  // Fetch emissions sources when climate layer is enabled
+  useEffect(() => {
+    if (!layers.climate || !center) {
+      setEmissionsSources([]);
+      return;
+    }
+    
+    const fetchEmissions = async () => {
+      setLoadingEmissions(true);
+      try {
+        const response = await fetch(`/api/emissions-sources?lat=${center[0]}&lng=${center[1]}&radius=150`);
+        if (response.ok) {
+          const data = await response.json();
+          setEmissionsSources(data.sources || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch emissions sources:", error);
+      } finally {
+        setLoadingEmissions(false);
+      }
+    };
+    
+    fetchEmissions();
+  }, [layers.climate, center]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -339,6 +375,61 @@ export default function Home() {
                 </Popup>
               </Marker>
             ))}
+            
+            {/* Climate TRACE Emissions Sources */}
+            {layers.climate && emissionsSources.map((source) => {
+              const sectorColors: Record<string, string> = {
+                'power': '#7c3aed',
+                'electricity-generation': '#7c3aed',
+                'oil-and-gas-production-and-transport': '#ea580c',
+                'oil-and-gas-refining': '#f97316',
+                'fossil-fuel-operations': '#dc2626',
+                'manufacturing': '#0891b2',
+                'steel': '#64748b',
+                'cement': '#78716c',
+                'transportation': '#0284c7',
+                'road-transportation': '#0284c7',
+                'waste': '#84cc16',
+                'agriculture': '#22c55e',
+                'default': '#6366f1',
+              };
+              const color = sectorColors[source.sector] || sectorColors.default;
+              const radius = source.emissions 
+                ? Math.min(Math.max(Math.log10(source.emissions + 1) * 3, 5), 20) 
+                : 6;
+              
+              return (
+                <CircleMarker
+                  key={`emission-${source.id}`}
+                  center={[source.lat, source.lng]}
+                  radius={radius}
+                  pathOptions={{
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.6,
+                    weight: 2,
+                  }}
+                >
+                  <Popup className="min-w-[220px] rounded-xl overflow-hidden shadow-lg border-none p-0">
+                    <div className="p-3 bg-background">
+                      <div className="font-bold text-sm mb-1 text-foreground">{source.name}</div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span 
+                          className="inline-block w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="text-xs text-muted-foreground">{source.sectorLabel}</span>
+                      </div>
+                      {source.emissionsFormatted && (
+                        <div className="text-sm font-medium text-emerald-700">
+                          {source.emissionsFormatted} tonnes CO2e/yr
+                        </div>
+                      )}
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
           </MapContainer>
         )}
       </div>

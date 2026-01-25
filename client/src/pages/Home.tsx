@@ -89,6 +89,7 @@ export default function Home() {
     air: true,
     water: true,
     pollution: true,
+    satellite: false,
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
@@ -284,10 +285,17 @@ export default function Home() {
             className="w-full h-full"
             style={{ background: '#e5e7eb' }} // Fallback color
           >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            {layers.satellite ? (
+              <TileLayer
+                attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              />
+            ) : (
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+            )}
             
             <MapController center={center} />
             <LocationMarker onSelectLocation={(lat, lng) => handleLocationSelect(lat, lng)} />
@@ -375,6 +383,15 @@ export default function Home() {
               {/* Desktop layer toggles */}
               <div className="hidden md:flex gap-1 bg-white/95 backdrop-blur rounded-xl p-1 shadow-lg border border-white/50">
                 <Button 
+                  variant={layers.satellite ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setLayers(l => ({...l, satellite: !l.satellite}))}
+                  className="rounded-lg h-8 px-3 text-xs"
+                  data-testid="button-layer-satellite"
+                >
+                  Satellite
+                </Button>
+                <Button 
                   variant={layers.air ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setLayers(l => ({...l, air: !l.air}))}
@@ -413,6 +430,15 @@ export default function Home() {
                     className="md:hidden absolute right-0 top-12 bg-white/95 backdrop-blur rounded-xl p-2 shadow-xl border border-white/50 z-50 min-w-[140px]"
                   >
                     <div className="flex flex-col gap-1">
+                      <Button 
+                        variant={layers.satellite ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setLayers(l => ({...l, satellite: !l.satellite}))}
+                        className="rounded-lg h-9 justify-start text-sm"
+                        data-testid="button-layer-satellite-mobile"
+                      >
+                        Satellite View
+                      </Button>
                       <Button 
                         variant={layers.air ? "default" : "ghost"}
                         size="sm"

@@ -88,6 +88,21 @@ export const analysisResponseSchema = z.object({
       emissionsFormatted: z.string(),
     })),
   }).nullable().optional(),
+  landCoverContext: z.object({
+    classes: z.array(z.object({
+      classId: z.number(),
+      name: z.string(),
+      color: z.string(),
+      count: z.number(),
+      percentage: z.number(),
+    })),
+    dominantClass: z.string(),
+    treePercentage: z.number(),
+    builtPercentage: z.number(),
+    waterPercentage: z.number(),
+    cropPercentage: z.number(),
+    vegetationPercentage: z.number(),
+  }).nullable().optional(),
 });
 
 export type AnalysisResponse = z.infer<typeof analysisResponseSchema>;

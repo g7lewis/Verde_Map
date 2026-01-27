@@ -82,6 +82,20 @@ When the CO2 layer is toggled on, emission point sources are displayed on the ma
 - **Popup content**: Source name, sector with color indicator, emissions in tonnes CO2e/yr
 - **Returns**: Top 500 emitters globally, sorted by emissions
 
+### Sentinel 2 Land Cover Integration
+The `/api/analyze` endpoint queries Sentinel 2 satellite land cover data:
+- **Utility**: `server/landCoverQuery.ts` handles the ArcGIS ImageServer query
+- **Endpoint**: Esri Impact Observatory 10m Land Cover ImageServer
+- **Analysis radius**: 1km around the clicked location
+- **Data returned**: Land cover class breakdown with percentages
+- **Classes**: Water, Trees, Grass, Flooded Vegetation, Crops, Scrub/Shrub, Built Area, Bare Ground, Snow/Ice, Clouds, Rangeland
+- **Frontend display**: Sky-blue themed section in EnvironmentalCard showing:
+  - 3-column summary: Vegetation %, Built Area %, Water %
+  - Detailed breakdown with color-coded bars for top 5 classes
+  - Dominant land use class
+- **Timeout**: 10-second limit to prevent slow responses
+- **Data source**: Partnership between Impact Observatory, Microsoft, and Esri (no API key required)
+
 ### Key Design Decisions
 
 1. **Shared Route Contracts**: The `shared/routes.ts` file defines API contracts with input/output schemas, enabling type-safe API calls from the frontend and validation on the backend.

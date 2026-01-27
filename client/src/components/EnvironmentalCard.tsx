@@ -137,14 +137,14 @@ interface EnvironmentalCardProps {
       majorEmitters: number;
       facilitiesWithViolations: number;
       topIndustries: string[];
-    };
+    } | null;
     aqiContext?: {
       aqi: number;
       category: string;
       station: string | null;
       dominantPollutant: string | null;
       lastUpdated: string | null;
-    };
+    } | null;
     climateTraceContext?: {
       sourcesCount: number;
       totalEmissions: number;
@@ -161,7 +161,7 @@ interface EnvironmentalCardProps {
         emissions: number;
         emissionsFormatted: string;
       }[];
-    };
+    } | null;
     landCoverContext?: {
       classes: {
         classId: number;
@@ -176,7 +176,7 @@ interface EnvironmentalCardProps {
       waterPercentage: number;
       cropPercentage: number;
       vegetationPercentage: number;
-    };
+    } | null;
   };
   lat?: number;
   lng?: number;

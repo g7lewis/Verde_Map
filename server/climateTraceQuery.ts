@@ -274,11 +274,9 @@ export function getSectorLabel(sector: string): string {
   return SECTOR_LABELS[sector] || sector.charAt(0).toUpperCase() + sector.slice(1).replace(/-/g, ' ');
 }
 
-// Top emitting countries for global data display
+// Top 10 emitting countries for global data display (balanced for performance)
 const TOP_EMITTING_COUNTRIES = [
-  'CHN', 'USA', 'IND', 'RUS', 'JPN', 'DEU', 'IRN', 'SAU', 'IDN', 'KOR',
-  'CAN', 'MEX', 'BRA', 'ZAF', 'TUR', 'AUS', 'GBR', 'POL', 'THA', 'ITA',
-  'FRA', 'VNM', 'EGY', 'MYS', 'ARE', 'PAK', 'TWN', 'ARG', 'NGA', 'KAZ'
+  'CHN', 'USA', 'IND', 'RUS', 'JPN', 'DEU', 'IRN', 'SAU', 'IDN', 'KOR'
 ];
 
 export async function queryClimateTraceSourcesForMap(
@@ -287,8 +285,8 @@ export async function queryClimateTraceSourcesForMap(
   radiusKm: number = 100
 ): Promise<ClimateTraceSource[]> {
   try {
-    // Query all top-emitting countries in parallel for maximum global coverage
-    const countriesToQuery = TOP_EMITTING_COUNTRIES; // Query all 30 top emitters
+    // Query top-emitting countries in parallel for global coverage
+    const countriesToQuery = TOP_EMITTING_COUNTRIES; // Top 10 emitters
     
     console.log("Climate TRACE Map: Querying global emissions from", countriesToQuery.length, "countries");
     
@@ -297,7 +295,7 @@ export async function queryClimateTraceSourcesForMap(
         const params = new URLSearchParams({
           countries: iso3,
           year: "2022",
-          limit: "100000", // Get maximum sources from each country
+          limit: "500", // Get top 500 sources from each country for performance
         });
         
         const url = `https://api.climatetrace.org/v6/assets?${params.toString()}`;
@@ -396,8 +394,8 @@ export async function queryClimateTraceSourcesForMap(
       }
     }
     
-    // Return all emitters globally - no filtering for comprehensive coverage
-    return sources;
+    // Return top emitters globally, capped at 3000 for performance
+    return sources.slice(0, 3000);
   } catch (error) {
     console.error("Climate TRACE Map query failed:", error);
     return [];

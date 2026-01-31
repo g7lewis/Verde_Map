@@ -385,78 +385,57 @@ Return ONLY valid JSON.
     }
   });
 
-  // EPA facilities for map display - nationwide US coverage
+  // EPA facilities for map display - entire US dataset with pagination
   app.get("/api/epa-facilities", async (req, res) => {
     try {
-      // Define US regions for nationwide coverage (each region ~1000 results max)
-      const usRegions = [
-        // West Coast
-        { minLng: -125, maxLng: -117, minLat: 32, maxLat: 42 },   // California
-        { minLng: -125, maxLng: -117, minLat: 42, maxLat: 49 },   // Oregon/Washington
-        // Mountain West
-        { minLng: -117, maxLng: -109, minLat: 31, maxLat: 42 },   // AZ/NV/UT
-        { minLng: -117, maxLng: -104, minLat: 42, maxLat: 49 },   // Mountain North
-        // Central
-        { minLng: -109, maxLng: -100, minLat: 26, maxLat: 37 },   // TX/NM South
-        { minLng: -109, maxLng: -100, minLat: 37, maxLat: 49 },   // CO/WY/MT
-        { minLng: -100, maxLng: -94, minLat: 26, maxLat: 37 },    // TX Central
-        { minLng: -100, maxLng: -94, minLat: 37, maxLat: 49 },    // Central Plains
-        // Midwest
-        { minLng: -94, maxLng: -87, minLat: 29, maxLat: 37 },     // LA/AR/MO South
-        { minLng: -94, maxLng: -87, minLat: 37, maxLat: 49 },     // IA/MN/WI
-        { minLng: -87, maxLng: -82, minLat: 35, maxLat: 42 },     // IN/OH/KY
-        { minLng: -87, maxLng: -82, minLat: 42, maxLat: 49 },     // MI/WI North
-        // Southeast
-        { minLng: -94, maxLng: -82, minLat: 25, maxLat: 31 },     // Gulf Coast
-        { minLng: -87, maxLng: -80, minLat: 31, maxLat: 35 },     // AL/GA
-        { minLng: -82, maxLng: -75, minLat: 25, maxLat: 35 },     // FL/SC/NC
-        // Northeast
-        { minLng: -82, maxLng: -75, minLat: 35, maxLat: 42 },     // VA/MD/PA South
-        { minLng: -82, maxLng: -75, minLat: 42, maxLat: 46 },     // NY/PA North
-        { minLng: -75, maxLng: -67, minLat: 40, maxLat: 47 },     // New England
-      ];
+      const baseUrl = "https://echogeo.epa.gov/arcgis/rest/services/ECHO/Facilities/MapServer/0/query";
+      const allFeatures: any[] = [];
+      let offset = 0;
+      const limit = 1000; // EPA API max per request
+      const maxPages = 15; // Cap at 15,000 facilities for performance
       
-      console.log(`EPA facilities: Querying ${usRegions.length} US regions for nationwide coverage`);
+      console.log("EPA facilities: Fetching entire US dataset with pagination");
       
-      // Query all regions in parallel
-      const fetchPromises = usRegions.map(async (region) => {
+      // Paginate through results
+      for (let page = 0; page < maxPages; page++) {
+        const params = new URLSearchParams({
+          geometry: "-125,24,-66,50", // Continental US bounding box
+          geometryType: "esriGeometryEnvelope",
+          inSR: "4326",
+          outSR: "4326",
+          spatialRel: "esriSpatialRelIntersects",
+          outFields: "FAC_NAME,FAC_MAJOR_FLAG,FAC_CURR_SNC_FLG",
+          returnGeometry: "true",
+          f: "json",
+          where: "FAC_MAJOR_FLAG='Y' OR FAC_CURR_SNC_FLG='Y'",
+          resultRecordCount: limit.toString(),
+          resultOffset: offset.toString(),
+        });
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
         try {
-          const params = new URLSearchParams({
-            geometry: `${region.minLng},${region.minLat},${region.maxLng},${region.maxLat}`,
-            geometryType: "esriGeometryEnvelope",
-            inSR: "4326",
-            outSR: "4326",
-            spatialRel: "esriSpatialRelIntersects",
-            outFields: "FAC_NAME,FAC_MAJOR_FLAG,FAC_CURR_SNC_FLG",
-            returnGeometry: "true",
-            f: "json",
-            where: "FAC_MAJOR_FLAG='Y' OR FAC_CURR_SNC_FLG='Y'", // Only major facilities or those with violations
-            resultRecordCount: "500",
-          });
-          
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 8000);
-          
-          const response = await fetch(
-            `https://echogeo.epa.gov/arcgis/rest/services/ECHO/Facilities/MapServer/0/query?${params.toString()}`,
-            { signal: controller.signal }
-          );
+          const response = await fetch(`${baseUrl}?${params.toString()}`, { signal: controller.signal });
           clearTimeout(timeoutId);
           
-          if (!response.ok) return [];
+          if (!response.ok) break;
           
           const data = await response.json();
-          return data.features || [];
+          const features = data.features || [];
+          
+          if (features.length === 0) break;
+          
+          allFeatures.push(...features);
+          console.log(`EPA facilities: Page ${page + 1}, fetched ${features.length}, total ${allFeatures.length}`);
+          
+          if (features.length < limit) break; // No more results
+          offset += limit;
         } catch {
-          return [];
+          break;
         }
-      });
+      }
       
-      const allResults = await Promise.all(fetchPromises);
-      const allFeatures = allResults.flat();
-      
-      // Deduplicate by name and coordinates
-      const seen = new Set<string>();
       const facilities = allFeatures
         .map((f: any) => ({
           id: f.attributes.FAC_NAME || Math.random().toString(36).slice(2),
@@ -466,15 +445,9 @@ Return ONLY valid JSON.
           lat: f.geometry?.y,
           lng: f.geometry?.x,
         }))
-        .filter((f: any) => {
-          if (!f.lat || !f.lng) return false;
-          const key = `${f.name}-${f.lat.toFixed(4)}-${f.lng.toFixed(4)}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
+        .filter((f: any) => f.lat && f.lng);
       
-      console.log(`EPA facilities: Found ${facilities.length} unique facilities nationwide`);
+      console.log(`EPA facilities: Found ${facilities.length} total facilities`);
       
       res.json({
         facilities,

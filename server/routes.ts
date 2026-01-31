@@ -236,7 +236,7 @@ Return ONLY valid JSON.
 
       const aiStart = Date.now();
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           { role: "system", content: "You are an environmental data analyst. Use the provided EPA data to generate accurate, data-driven scores. Return JSON only." },
           { role: "user", content: prompt }
@@ -340,7 +340,7 @@ Return ONLY valid JSON.
       `;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           { role: "system", content: "You are a helpful environmental and geographic expert. Provide informative answers about locations." },
           { role: "user", content: prompt }

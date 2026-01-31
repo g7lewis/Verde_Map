@@ -100,9 +100,9 @@ The `/api/analyze` endpoint queries Sentinel 2 satellite land cover data:
 ### API Performance
 The `/api/analyze` endpoint is optimized for speed:
 - **Data fetching**: All external APIs (reverse geocoding, WAQI, EPA, Climate TRACE, Land Cover) run in parallel using `Promise.all`
-- **AI model**: Uses `gpt-4o-mini` for fast, cost-effective environmental analysis (~3-4s)
+- **AI model**: Uses `gpt-4o` for quality environmental analysis (~8-10s) - balances speed and response quality
 - **Timeouts**: EPA ECHO has 8s timeout to prevent slow responses from blocking requests
-- **Typical response time**: 5-8 seconds total (down from 22s+ with sequential calls)
+- **Typical response time**: 10-12 seconds total (down from 22s+ with sequential calls)
 - **Timing logs**: Server logs show `[TIMING]` breakdown for data fetch and AI analysis
 
 ### Key Design Decisions

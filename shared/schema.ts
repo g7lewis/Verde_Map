@@ -34,6 +34,24 @@ export const insertEmailSubscriberSchema = createInsertSchema(emailSubscribers).
 export type EmailSubscriber = typeof emailSubscribers.$inferSelect;
 export type InsertEmailSubscriber = z.infer<typeof insertEmailSubscriberSchema>;
 
+// Climate TRACE emissions sources cache
+export const emissionsSources = pgTable("emissions_sources", {
+  id: serial("id").primaryKey(),
+  sourceId: text("source_id").notNull(), // Climate TRACE asset ID
+  name: text("name").notNull(),
+  country: text("country").notNull(), // ISO3 country code
+  sector: text("sector").notNull(),
+  lat: doublePrecision("lat").notNull(),
+  lng: doublePrecision("lng").notNull(),
+  emissions: doublePrecision("emissions"), // CO2e tonnes/year
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+export const insertEmissionsSourceSchema = createInsertSchema(emissionsSources).omit({ id: true, lastUpdated: true });
+
+export type EmissionsSource = typeof emissionsSources.$inferSelect;
+export type InsertEmissionsSource = z.infer<typeof insertEmissionsSourceSchema>;
+
 // Score detail schema for expandable rating information
 export const scoreDetailSchema = z.object({
   value: z.number(),

@@ -530,6 +530,179 @@ Return ONLY valid JSON.
     }
   });
 
+  // Subscription status endpoint
+  app.get("/api/subscription/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUserById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if daily count should be reset
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const lastAnalysis = user.lastAnalysisDate ? new Date(user.lastAnalysisDate) : null;
+      
+      let dailyCount = user.dailyAnalysisCount || 0;
+      if (!lastAnalysis || lastAnalysis < today) {
+        dailyCount = 0;
+        // Reset the count in database
+        await storage.resetDailyAnalysisCount(userId);
+      }
+      
+      const isPro = user.subscriptionTier === 'pro' && user.subscriptionStatus === 'active';
+      const dailyLimit = isPro ? -1 : 5; // -1 means unlimited
+      const pinLimit = isPro ? -1 : 10;
+      
+      res.json({
+        tier: user.subscriptionTier || 'free',
+        status: user.subscriptionStatus || 'active',
+        expiresAt: user.subscriptionExpiresAt,
+        usage: {
+          dailyAnalyses: dailyCount,
+          dailyLimit,
+          pinsDropped: user.pinsDropped || 0,
+          pinLimit,
+        },
+        gamification: {
+          totalPoints: user.totalPoints || 0,
+          pinsDropped: user.pinsDropped || 0,
+          locationsExplored: user.locationsExplored || 0,
+          currentStreak: user.currentStreak || 0,
+          badges: user.badges || [],
+        },
+      });
+    } catch (error) {
+      console.error("Subscription status error:", error);
+      res.status(500).json({ message: "Failed to get subscription status" });
+    }
+  });
+  
+  // Track analysis usage
+  app.post("/api/subscription/track-analysis", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUserById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const isPro = user.subscriptionTier === 'pro' && user.subscriptionStatus === 'active';
+      
+      // Check daily limit for free users
+      if (!isPro) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const lastAnalysis = user.lastAnalysisDate ? new Date(user.lastAnalysisDate) : null;
+        
+        let dailyCount = user.dailyAnalysisCount || 0;
+        if (lastAnalysis && lastAnalysis >= today) {
+          if (dailyCount >= 5) {
+            return res.status(429).json({ 
+              message: "Daily analysis limit reached",
+              upgradeUrl: "/upgrade"
+            });
+          }
+        } else {
+          dailyCount = 0;
+        }
+      }
+      
+      // Increment usage
+      await storage.incrementAnalysisCount(userId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Track analysis error:", error);
+      res.status(500).json({ message: "Failed to track analysis" });
+    }
+  });
+  
+  // Update gamification stats (authenticated version)
+  app.post("/api/gamification/update", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { action, data } = req.body;
+      
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const updates: any = {};
+      const today = new Date();
+      const lastActivity = user.lastActivityDate ? new Date(user.lastActivityDate) : null;
+      
+      // Calculate streak
+      if (lastActivity) {
+        const daysDiff = Math.floor((today.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff === 1) {
+          updates.currentStreak = (user.currentStreak || 0) + 1;
+        } else if (daysDiff > 1) {
+          updates.currentStreak = 1;
+        }
+      } else {
+        updates.currentStreak = 1;
+      }
+      
+      updates.lastActivityDate = today;
+      
+      // Calculate points based on action
+      let pointsEarned = 0;
+      const streakBonus = Math.min(updates.currentStreak || user.currentStreak || 0, 20);
+      
+      if (action === 'pin_dropped') {
+        pointsEarned = 10 + streakBonus;
+        updates.pinsDropped = (user.pinsDropped || 0) + 1;
+      } else if (action === 'location_explored') {
+        pointsEarned = 5 + streakBonus;
+        updates.locationsExplored = (user.locationsExplored || 0) + 1;
+      }
+      
+      updates.totalPoints = (user.totalPoints || 0) + pointsEarned;
+      
+      // Check for new badges
+      const badges = (user.badges as string[]) || [];
+      const newBadges: string[] = [];
+      
+      const pinsDropped = updates.pinsDropped || user.pinsDropped || 0;
+      const locationsExplored = updates.locationsExplored || user.locationsExplored || 0;
+      
+      // Pin badges
+      if (pinsDropped >= 1 && !badges.includes('first_steps')) newBadges.push('first_steps');
+      if (pinsDropped >= 5 && !badges.includes('explorer')) newBadges.push('explorer');
+      if (pinsDropped >= 10 && !badges.includes('naturalist')) newBadges.push('naturalist');
+      if (pinsDropped >= 25 && !badges.includes('eco_warrior')) newBadges.push('eco_warrior');
+      if (pinsDropped >= 50 && !badges.includes('guardian')) newBadges.push('guardian');
+      if (pinsDropped >= 100 && !badges.includes('legend')) newBadges.push('legend');
+      
+      // Exploration badges
+      if (locationsExplored >= 5 && !badges.includes('curious')) newBadges.push('curious');
+      if (locationsExplored >= 15 && !badges.includes('wanderer')) newBadges.push('wanderer');
+      if (locationsExplored >= 50 && !badges.includes('globetrotter')) newBadges.push('globetrotter');
+      
+      if (newBadges.length > 0) {
+        updates.badges = [...badges, ...newBadges];
+        updates.totalPoints = updates.totalPoints + (newBadges.length * 25);
+      }
+      
+      await storage.updateUserGamification(userId, updates);
+      
+      res.json({
+        pointsEarned,
+        totalPoints: updates.totalPoints,
+        newBadges,
+        streak: updates.currentStreak || user.currentStreak,
+      });
+    } catch (error) {
+      console.error("Gamification update error:", error);
+      res.status(500).json({ message: "Failed to update gamification" });
+    }
+  });
+
   // Initial Seed
   const existingPins = await storage.getPins();
   if (existingPins.length === 0) {

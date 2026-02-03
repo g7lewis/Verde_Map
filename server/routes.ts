@@ -9,6 +9,9 @@ import { queryAirQuality, aqiToScore, getAqiCategory } from "./waqiQuery";
 import { queryClimateTraceSources, queryClimateTraceSourcesForMap, formatEmissions, getSectorLabel, ClimateTraceSource, queryEmissionsFromDatabase, queryEmissionsNearLocation, getEmissionsDatabaseCount } from "./climateTraceQuery";
 import { queryLandCover } from "./landCoverQuery";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { stripeService } from "./stripeService";
+import { stripeStorage } from "./stripeStorage";
+import { getStripePublishableKey } from "./stripeClient";
 
 // Reverse geocode coordinates to get accurate location name
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
@@ -700,6 +703,129 @@ Return ONLY valid JSON.
     } catch (error) {
       console.error("Gamification update error:", error);
       res.status(500).json({ message: "Failed to update gamification" });
+    }
+  });
+
+  // Stripe routes
+  app.get("/api/stripe/publishable-key", async (req, res) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error) {
+      console.error("Failed to get publishable key:", error);
+      res.status(500).json({ message: "Failed to get Stripe configuration" });
+    }
+  });
+
+  app.get("/api/stripe/products", async (req, res) => {
+    try {
+      const rows = await stripeStorage.listProductsWithPrices();
+      const productsMap = new Map();
+      
+      for (const row of rows as any[]) {
+        if (!productsMap.has(row.product_id)) {
+          productsMap.set(row.product_id, {
+            id: row.product_id,
+            name: row.product_name,
+            description: row.product_description,
+            active: row.product_active,
+            metadata: row.product_metadata,
+            prices: []
+          });
+        }
+        if (row.price_id) {
+          productsMap.get(row.product_id).prices.push({
+            id: row.price_id,
+            unit_amount: row.unit_amount,
+            currency: row.currency,
+            recurring: row.recurring,
+            active: row.price_active,
+          });
+        }
+      }
+      
+      res.json({ products: Array.from(productsMap.values()) });
+    } catch (error) {
+      console.error("Failed to list products:", error);
+      res.status(500).json({ message: "Failed to list products" });
+    }
+  });
+
+  app.post("/api/stripe/create-checkout-session", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUserById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const { priceId } = req.body;
+      if (!priceId) {
+        return res.status(400).json({ message: "Price ID required" });
+      }
+
+      // Validate priceId against allowed Verde Pro prices
+      const allowedPrices = [
+        process.env.VERDE_PRO_MONTHLY_PRICE_ID,
+        process.env.VERDE_PRO_YEARLY_PRICE_ID,
+      ].filter(Boolean);
+      
+      if (allowedPrices.length > 0 && !allowedPrices.includes(priceId)) {
+        // Also validate against Stripe synced prices as fallback
+        const price = await stripeStorage.getPrice(priceId);
+        if (!price || !price.active) {
+          return res.status(400).json({ message: "Invalid price ID" });
+        }
+      }
+
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripeService.createCustomer(
+          user.email || `${userId}@verde.app`,
+          userId
+        );
+        await storage.updateUserSubscription(userId, {
+          tier: 'free',
+          stripeCustomerId: customer.id,
+        });
+        customerId = customer.id;
+      }
+
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      const session = await stripeService.createCheckoutSession(
+        customerId,
+        priceId,
+        `${baseUrl}/?checkout=success`,
+        `${baseUrl}/?checkout=cancelled`
+      );
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Checkout session error:", error);
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
+  app.post("/api/stripe/create-portal-session", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUserById(userId);
+      
+      if (!user?.stripeCustomerId) {
+        return res.status(400).json({ message: "No active subscription" });
+      }
+
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      const session = await stripeService.createCustomerPortalSession(
+        user.stripeCustomerId,
+        `${baseUrl}/`
+      );
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Portal session error:", error);
+      res.status(500).json({ message: "Failed to create portal session" });
     }
   });
 

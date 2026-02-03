@@ -199,3 +199,48 @@ Verde includes a gamification system to encourage user engagement with environme
 - **Fast fallback**: 3-second timeout to San Francisco if geolocation is slow
 - **Geolocation options**: 5-second timeout, 60-second max age for cached positions
 - Ensures map loads quickly regardless of browser location permissions
+
+## Authentication System
+
+Verde uses Replit Auth for user authentication:
+
+### Implementation
+- **Backend**: `server/replit_integrations/auth.ts` - Session management and authentication middleware
+- **Frontend Hook**: `client/src/hooks/use-auth.ts` - React hook for auth state
+- **User Menu**: `client/src/components/UserMenu.tsx` - Dropdown with user info and actions
+
+### User Data (in `users` table)
+- Profile: id, email, firstName, lastName, profileImageUrl
+- Subscription: subscriptionTier, stripeCustomerId, stripeSubscriptionId, subscriptionStatus, subscriptionExpiresAt
+- Gamification: totalPoints, pinsDropped, locationsExplored, currentStreak, badges, lastActivityDate
+- Usage tracking: dailyAnalysisCount, lastAnalysisDate
+
+## Subscription System
+
+Verde offers a freemium model with Pro upgrade via Stripe:
+
+### Subscription Tiers
+- **Free Tier**: 5 analyses/day, 10 total pins
+- **Pro Tier ($9.99/month or $79.99/year)**: Unlimited analyses, unlimited pins, priority features
+
+### Stripe Integration
+- **Client**: `server/stripeClient.ts` - Stripe SDK initialization with Replit credentials
+- **Service**: `server/stripeService.ts` - Checkout and portal session creation
+- **Storage**: `server/stripeStorage.ts` - Query synced Stripe data from PostgreSQL
+- **Webhooks**: `server/webhookHandlers.ts` - Webhook processing via stripe-replit-sync
+
+### API Endpoints
+- `GET /api/subscription/status` - Get user's subscription and usage status
+- `POST /api/subscription/track-analysis` - Track analysis usage (enforces limits)
+- `POST /api/stripe/create-checkout-session` - Create Stripe checkout for upgrade
+- `POST /api/stripe/create-portal-session` - Customer portal for subscription management
+- `GET /api/stripe/products` - List available subscription products
+
+### Environment Variables
+- `VERDE_PRO_PRODUCT_ID` - Stripe product ID
+- `VERDE_PRO_MONTHLY_PRICE_ID` - Monthly price ID
+- `VERDE_PRO_YEARLY_PRICE_ID` - Yearly price ID
+
+### Frontend Components
+- `UserMenu.tsx` - Shows login button or user dropdown with upgrade option
+- `UpgradeModal.tsx` - Modal with pricing and checkout flow

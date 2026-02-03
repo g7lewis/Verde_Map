@@ -12,6 +12,7 @@ import { GamificationPanel } from "@/components/GamificationPanel";
 import { BadgeNotification } from "@/components/BadgeNotification";
 import { EsriLayers } from "@/components/EsriLayers";
 import { EmailSignup } from "@/components/EmailSignup";
+import { UserMenu } from "@/components/UserMenu";
 import { useGamification } from "@/hooks/use-gamification";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -723,6 +724,11 @@ export default function Home() {
                 lng={selectedLocation?.lng}
                 locationName={analyze.data?.location}
               />
+            </div>
+            
+            {/* User Menu */}
+            <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg border border-white/50 p-1">
+              <UserMenu />
             </div>
           </div>
         </div>

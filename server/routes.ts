@@ -276,7 +276,7 @@ export async function registerRoutes(
 ${dataContext}
 
 Provide a JSON response:
-- location: "${locationName}" (or slightly more descriptive)
+- location: Use exactly "${locationName}" with no coordinates or extra context
 - summary: 2-3 sentence environmental summary. ${cesRawData ? 'Mention CalEnviroScreen data and any remediation sites if relevant.' : epaData.totalFacilities > 0 ? 'Mention the industrial context.' : ''}
 ${aiNeededScores.length > 0 ? `- scores: Object with ONLY these keys: ${aiNeededScores.join(", ")} (each 0-100)
 - scoreDetails: Object with ONLY these keys: ${aiNeededScores.join(", ")}. Each has value (number), factors (array of 2-3 strings), tips (array of 1-2 strings).` : ''}
@@ -396,7 +396,7 @@ Return ONLY valid JSON.`;
       console.log(`[TIMING] Total /api/analyze: ${totalTime}ms (data: ${dataFetchTime}ms, AI: ${aiTime}ms)`);
       
       res.json({
-        location: aiData.location || locationName,
+        location: locationName,
         summary: aiData.summary || `Environmental analysis for ${locationName}.`,
         scores: {
           airQuality: finalScores.airQuality,

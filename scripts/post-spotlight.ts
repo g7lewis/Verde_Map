@@ -185,7 +185,7 @@ function formatPost(
   const text = [
     `\u{1f30d} ${analysis.location} scored ${overall} on Verde!`,
     `\u{1f4a8} Air: ${air} | \u{1f4a7} Water: ${water} | \u{1f321}\u{fe0f} Climate: ${climate}`,
-    `\u{1f333} Green: ${green} | \u{2728} Clean: ${clean}`,
+    `\u{1f333} Green: ${green} | \u{2728} Pollution: ${clean}`,
     epaLine,
     `Check your area \u{2192} ${url}`,
   ]

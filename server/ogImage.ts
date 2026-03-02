@@ -155,7 +155,7 @@ export async function renderOgImage(
     { key: "waterQuality", label: "Water Quality" },
     { key: "climateEmissions", label: "Climate & Emissions" },
     { key: "greenSpace", label: "Green Space" },
-    { key: "pollution", label: "Cleanliness" },
+    { key: "pollution", label: "Pollution" },
   ];
 
   const barStartY = 320;

@@ -81,7 +81,7 @@ function getCategoryLabel(key: string): string {
     waterQuality: "Water Quality",
     climateEmissions: "Climate & Emissions",
     greenSpace: "Green Space",
-    pollution: "Cleanliness",
+    pollution: "Pollution",
   };
   return map[key] || key;
 }
@@ -115,9 +115,10 @@ interface ScoreProps {
   testId?: string;
   climateTraceData?: ClimateTraceData | null;
   dataSource?: string;
+  sourceLink?: { label: string; url: string } | null;
 }
 
-function ScoreRow({ label, value, icon: Icon, colorClass, detail, testId, climateTraceData, dataSource }: ScoreProps) {
+function ScoreRow({ label, value, icon: Icon, colorClass, detail, testId, climateTraceData, dataSource, sourceLink }: ScoreProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const grade = getLetterGrade(value);
   
@@ -234,6 +235,13 @@ function ScoreRow({ label, value, icon: Icon, colorClass, detail, testId, climat
                     </div>
                   )}
                 </div>
+              )}
+              {sourceLink && (
+                <a href={sourceLink.url} target="_blank" rel="noopener noreferrer"
+                   className="ml-11 flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors">
+                  <ExternalLink className="w-3 h-3" />
+                  View source data on {sourceLink.label}
+                </a>
               )}
             </div>
           </motion.div>
@@ -435,7 +443,7 @@ function generateShareCard(
     { key: "waterQuality", label: "Water Quality", icon: "💧" },
     { key: "climateEmissions", label: "Climate & Emissions", icon: "🌡️" },
     { key: "greenSpace", label: "Green Space", icon: "🌳" },
-    { key: "pollution", label: "Cleanliness", icon: "✨" },
+    { key: "pollution", label: "Pollution", icon: "✨" },
   ];
 
   const barStartY = 320;
@@ -850,51 +858,56 @@ export function EnvironmentalCard({ data, lat, lng, isLoading, onClose, isMinimi
         </div>
 
         <div className="space-y-2.5">
-          <ScoreRow 
-            label="Air Quality" 
-            value={data.scores.airQuality} 
-            icon={Wind} 
+          <ScoreRow
+            label="Air Quality"
+            value={data.scores.airQuality}
+            icon={Wind}
             colorClass="text-sky-500"
             detail={data.scoreDetails?.airQuality}
             testId="score-air-quality"
             dataSource={data.scoreSources?.airQuality}
+            sourceLink={data.aqiContext ? { label: "WAQI", url: "https://aqicn.org/here" } : null}
           />
-          <ScoreRow 
-            label="Water Quality" 
-            value={data.scores.waterQuality} 
-            icon={Droplets} 
+          <ScoreRow
+            label="Water Quality"
+            value={data.scores.waterQuality}
+            icon={Droplets}
             colorClass="text-blue-500"
             detail={data.scoreDetails?.waterQuality}
             testId="score-water-quality"
             dataSource={data.scoreSources?.waterQuality}
+            sourceLink={data.cesContext ? { label: "CalEnviroScreen", url: "https://experience.arcgis.com/experience/11d2f52282a54ceebcac7428e6a4e3da" } : null}
           />
-          <ScoreRow 
-            label="Climate & Emissions" 
-            value={data.scores.climateEmissions} 
-            icon={Thermometer} 
+          <ScoreRow
+            label="Climate & Emissions"
+            value={data.scores.climateEmissions}
+            icon={Thermometer}
             colorClass="text-teal-500"
             detail={data.scoreDetails?.climateEmissions}
             testId="score-climate-emissions"
             climateTraceData={data.climateTraceContext}
             dataSource={data.scoreSources?.climateEmissions}
+            sourceLink={lat != null && lng != null ? { label: "Climate TRACE", url: `https://climatetrace.org/explore#lat=${lat}&lng=${lng}&zoom=10` } : null}
           />
-          <ScoreRow 
-            label="Green Space" 
-            value={data.scores.greenSpace} 
-            icon={Trees} 
+          <ScoreRow
+            label="Green Space"
+            value={data.scores.greenSpace}
+            icon={Trees}
             colorClass="text-green-600"
             detail={data.scoreDetails?.greenSpace}
             testId="score-green-space"
             dataSource={data.scoreSources?.greenSpace}
+            sourceLink={lat != null && lng != null ? { label: "Copernicus", url: `https://browser.dataspace.copernicus.eu/?zoom=14&lat=${lat}&lng=${lng}` } : null}
           />
-          <ScoreRow 
-            label="Cleanliness" 
-            value={data.scores.pollution} 
-            icon={CheckCircle2} 
+          <ScoreRow
+            label="Pollution"
+            value={data.scores.pollution}
+            icon={CheckCircle2}
             colorClass="text-purple-500"
             detail={data.scoreDetails?.pollution}
             testId="score-cleanliness"
             dataSource={data.scoreSources?.pollution}
+            sourceLink={lat != null && lng != null ? { label: "EPA ECHO", url: `https://echo.epa.gov/facilities/facility-search/results?lat=${lat}&lng=${lng}&radius=10` } : null}
           />
         </div>
 
@@ -903,6 +916,12 @@ export function EnvironmentalCard({ data, lat, lng, isLoading, onClose, isMinimi
             <div className="flex items-center gap-2 mb-2">
               <Factory className="w-4 h-4 text-amber-600" />
               <span className="text-sm font-medium text-amber-800">EPA Facility Data (10 mi radius)</span>
+              {lat != null && lng != null && (
+                <a href={`https://echo.epa.gov/facilities/facility-search/results?lat=${lat}&lng=${lng}&radius=10`} target="_blank" rel="noopener noreferrer"
+                   className="ml-auto text-xs text-amber-600 hover:text-amber-800 transition-colors flex items-center gap-0.5">
+                  EPA ECHO <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-2 mb-2">
               <div className="text-center p-2 bg-white rounded border border-amber-100">
@@ -941,6 +960,10 @@ export function EnvironmentalCard({ data, lat, lng, isLoading, onClose, isMinimi
               <Shield className="w-4 h-4 text-indigo-600" />
               <span className="text-sm font-medium text-indigo-800">CalEnviroScreen 4.0</span>
               <span className="text-xs text-indigo-500">Tract {data.cesContext.censusTract}</span>
+              <a href="https://experience.arcgis.com/experience/11d2f52282a54ceebcac7428e6a4e3da" target="_blank" rel="noopener noreferrer"
+                 className="ml-auto text-xs text-indigo-500 hover:text-indigo-700 transition-colors flex items-center gap-0.5">
+                View Map <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
             <div className="grid grid-cols-2 gap-2 mb-2">
               {data.cesContext.overallPercentile !== null && (
@@ -995,6 +1018,12 @@ export function EnvironmentalCard({ data, lat, lng, isLoading, onClose, isMinimi
             <div className="flex items-center gap-2 mb-2">
               <Map className="w-4 h-4 text-sky-600" />
               <span className="text-sm font-medium text-sky-800">Land Use (1km radius)</span>
+              {lat != null && lng != null && (
+                <a href={`https://browser.dataspace.copernicus.eu/?zoom=14&lat=${lat}&lng=${lng}`} target="_blank" rel="noopener noreferrer"
+                   className="ml-auto text-xs text-sky-500 hover:text-sky-700 transition-colors flex items-center gap-0.5">
+                  Copernicus <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-2 mb-3">
               <div className="text-center p-2 bg-white rounded border border-sky-100">
